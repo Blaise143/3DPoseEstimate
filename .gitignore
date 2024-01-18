@@ -2,3 +2,5 @@ data/
 wandb/
 __pycache__/
 lightning_logs/
+checkpoints/wandb/
+checkpoints/Mirror_Project/

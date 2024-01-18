@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, random_split
 import pytorch_lightning as pl
 import wandb
 
-BATCH_SIZE = 300
+BATCH_SIZE = 500
 
 
 class VariationalAutoEncoder(pl.LightningModule):
@@ -20,6 +20,7 @@ class VariationalAutoEncoder(pl.LightningModule):
             encode_layers.extend(
                 [
                     nn.Linear(layers_order[i], layers_order[i + 1]),
+                    nn.BatchNorm1d(num_features=layers_order[i+1]),
                     nn.ReLU(),
                     nn.Dropout(dropout)
                 ]
@@ -39,7 +40,9 @@ class VariationalAutoEncoder(pl.LightningModule):
             decode_layers.append(
                 nn.Linear(layers_order[i], layers_order[i + 1]))
             if i < len(layers_order) - 2:
+                decode_layers.append(nn.BatchNorm1d(layers_order[i+1]))
                 decode_layers.append(nn.ReLU())
+                decode_layers.append(nn.Dropout(dropout))
         self.decoder = nn.Sequential(*decode_layers)
 
         self.reconstruction_loss = nn.MSELoss(reduction="sum")
@@ -64,46 +67,51 @@ class VariationalAutoEncoder(pl.LightningModule):
         return reconstructed, mu, log_var
 
     def training_step(self, batch: torch.Tensor, batch_idx: int):
-        x, _ = batch
+        x, x_v = batch
         reconstructed, mu, log_var = self.forward(x)
-        # loss = self.loss_function(x, reconstructed, mu, log_var)
         # Calculating reconstruction loss
         recon_loss = self.reconstruction_loss(reconstructed, x)
         # calculating kl divergence loss
         kl_divergence_loss = self.kl_divergence(mu, log_var)
-        loss = 1.5*recon_loss+kl_divergence_loss
+
+        reconstructed_v, mu_v, log_var_v = self.forward(x_v)
+        recon_loss_v = self.reconstruction_loss(reconstructed_v, x_v)
+        kl_divergence_loss_v = self.kl_divergence(mu_v, log_var_v)
+
+        loss = recon_loss+kl_divergence_loss + recon_loss_v + kl_divergence_loss_v
         self.log("train_loss", loss)
-        self.log("train_reconstruction_loss", recon_loss)
-        self.log("train_kl_divergence_loss", kl_divergence_loss)
+        self.log("train_reconstruction_loss", recon_loss+recon_loss_v)
+        self.log("train_kl_divergence_loss",
+                 kl_divergence_loss+kl_divergence_loss_v)
 
         return loss
 
     def validation_step(self, batch: torch.Tensor, batch_idx: int):
-        x, _ = batch
+        x, x_v = batch
         reconstructed, mu, logvar = self.forward(x)
+        reconstructed_v, mu_v, logvar_v = self.forward(x_v)
         # loss = self.loss_function(
         # x=x, x_reconstructed=reconstructed, mu=mu, log_var=logvar)
         recon_loss = self.reconstruction_loss(reconstructed, x)
         kl_divergence_loss = self.kl_divergence(mu, logvar)
-        loss = 1.5*recon_loss+kl_divergence_loss
+
+        recon_loss_v = self.reconstruction_loss(reconstructed_v, x_v)
+        kl_divergence_loss_v = self.kl_divergence(mu_v, logvar_v)
+
+        loss = recon_loss+kl_divergence_loss + recon_loss_v+kl_divergence_loss_v
+
         self.log("val_loss", loss)
-        self.log("val_reconstruction_loss", recon_loss)
-        self.log("val_kl_divergence_loss", kl_divergence_loss)
+        self.log("val_reconstruction_loss", recon_loss + recon_loss_v)
+        self.log("val_kl_divergence_loss",
+                 kl_divergence_loss + kl_divergence_loss_v)
 
         return loss
-
-    def loss_function(self, x: torch.Tensor, x_reconstructed: torch.Tensor, mu: torch.Tensor, log_var: torch.Tensor):
-        recon_loss = self.reconstruction_loss(x_reconstructed, x)
-        kl_divergence_loss = self.kl_divergence(mu, log_var)
-        total_loss = recon_loss + kl_divergence_loss
-        return total_loss
 
     def kl_divergence(self, mu: torch.Tensor, log_var: torch.Tensor):
         var = log_var.exp()
         mu_squared = mu.pow(2)
         kl_div_elementwise = 1 + log_var - mu_squared - var
         total_kl_div = -0.5 * torch.sum(kl_div_elementwise)
-        self.log("KL_divergence_loss", total_kl_div)
         return total_kl_div
 
     def configure_optimizers(self):

@@ -104,6 +104,8 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     ax.set_title(title)
     ax.grid()
     plt.gca().set_aspect("equal")
+    # setting figsize
+    plt.rcParams["figure.figsize"] = (18, 10)
     return fig
 
 

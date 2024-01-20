@@ -29,7 +29,7 @@ custom_data = TestCustomDataset(path)
 # print(first)
 # plot = plot_keypoints(first.view(-1, 2))
 # plt.show()
-layers_order = [38, 35, 30, 25, 20, 15]
+layers_order = [38, 35, 32, 30, 25, 18, 20, 15]
 latent_dim = 10
 
 
@@ -62,28 +62,34 @@ def load_checkpoint(checkpoint_path: str):
     return model
 
 
-checkpoint_path = "../checkpoints/vae_model_epoch=3675_val_loss_val_loss=294.52.ckpt"
-model = load_checkpoint(checkpoint_path=checkpoint_path)
-# print(model)
+def predict_and_plot(checkpoint_path: str = "../checkpoints/vae_model_epoch=3675_val_loss_val_loss=294.52.ckpt"):
+    # checkpoint_path = ""
+    model = load_checkpoint(checkpoint_path=checkpoint_path)
+    # print(model)
 
-random_indices = random.sample(range(len(custom_data)), 1)
-random_keypoints = [custom_data[idx] for idx in random_indices]
+    random_indices = random.sample(range(len(custom_data)), 1)
+    random_keypoints = [custom_data[idx] for idx in random_indices]
 
-# print(random_indices)
-# print(random_keypoints)
-# print(custom_data[0])
-model.eval()
-for point in random_keypoints:
-    real, virtual = point[0], point[1]
-    real_pred, virtual_pred = model(
-        real.unsqueeze(0)), model(virtual.unsqueeze(0))
+    # print(random_indices)
+    # print(random_keypoints)
+    # print(custom_data[0])
+    model.eval()
+    for point in random_keypoints:
+        real, virtual = point[0], point[1]
+        real_pred, virtual_pred = model(
+            real.unsqueeze(0)), model(virtual.unsqueeze(0))
 
-    real, virtual = real.view(-1, 2), virtual.view(-1, 2)
-    real_pred, virtual_pred = real_pred[0].squeeze(
-        0).view(-1, 2), virtual_pred[0].squeeze(0).view(-1, 2)
+        real, virtual = real.view(-1, 2), virtual.view(-1, 2)
+        real_pred, virtual_pred = real_pred[0].squeeze(
+            0).view(-1, 2), virtual_pred[0].squeeze(0).view(-1, 2)
 
-    virtual_plot = plot_keypoints(virtual, title="actual virtual")
-    v_pred_plot = plot_keypoints(virtual_pred, title="predicted virtual")
-    real_plot = plot_keypoints(real, title="Actual Real")
-    r_pred_plot = plot_keypoints(real_pred, title="predicted real")
-    plt.show()
+        virtual_plot = plot_keypoints(virtual, title="actual virtual")
+        v_pred_plot = plot_keypoints(virtual_pred, title="predicted virtual")
+        real_plot = plot_keypoints(real, title="Actual Real")
+        r_pred_plot = plot_keypoints(real_pred, title="predicted real")
+        plt.show()
+
+
+predict_and_plot(
+    checkpoint_path="../checkpoints/vae_model_epoch=2362_val_loss_val_loss=286.11.ckpt")
+# predict_and_plot()

@@ -38,6 +38,13 @@ class TestCustomDataset(Dataset):
         real, virtual = real - real_center, virtual - virtual_center
 
         real, virtual = real[:, :, :2], virtual[:, :, :2]
+        assert real.shape == virtual.shape
+
+        # shuffling
+        indices = torch.randperm(real.shape[0])
+        real = real[indices]
+        virtual = virtual[indices]
+
         self.real, self.virtual = real.reshape(
             real.shape[0], -1), virtual.reshape(virtual.shape[0], -1)
 
@@ -67,6 +74,18 @@ class TestCustomDataset(Dataset):
 
 if __name__ == "__main__":
     pth = "../../data/zju-m-seq1/annots/3"
+    pth2 = "../../data/zju-m-seq1/annots/4"
+
+    pth3 = "../../data/zju-m-seq1/annots/5"
+    pth4 = "../../data/zju-m-seq1/annots/6"
+
+    from torch.utils.data import ConcatDataset
     dataset = TestCustomDataset(path=pth)
+
+    # dataset2 = TestCustomDataset(path=pth2)
+    # datase3 = TestCustomDataset(path=pth3)
+    dataset4 = TestCustomDataset(path=pth4)
     # print(len(dataset))
-    print(dataset[0][0])
+    # print(dataset[0][0])
+    combined_dataset = ConcatDataset([dataset, dataset4])
+    print(len(combined_dataset))

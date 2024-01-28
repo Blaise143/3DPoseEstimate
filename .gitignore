@@ -4,4 +4,4 @@ __pycache__/
 lightning_logs/
 checkpoints/wandb/
 checkpoints/Mirror_Project/
-.DS_Store
+.DS_Store/

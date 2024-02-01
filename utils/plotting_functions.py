@@ -14,7 +14,7 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     kind:
         One of J1 or J2. J1 corresponds to Frank or Abi frames, J2 corresponds to the test set
     """
-    assert kind in ["J1", "J2"], "kind should be valid"
+    assert kind in ["J1", "J2", "mocap"], "kind should be valid"
 
     kp_array1 = ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 'left_shoulder', 'right_shoulder',
                  'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist', 'left_hip', 'right_hip', 'left_knee',
@@ -64,6 +64,7 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     ]
 
     keypoint_coordinates = [(float(x[0]), float(x[1])) for x in data]
+    print(f"kp coordinates: {len(keypoint_coordinates)}")
 
     if kind == "J1":
         keypoint_array = kp_array1
@@ -81,6 +82,9 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     # Add labels for each keypoint
     for keypoint in keypoint_array:
         x, y = keypoint_dict[keypoint]
+        ax.scatter(x, y, label=keypoint, marker=".")  # TODO: CHECK THIS
+        ax.text(x + 0.02, y + 0.02, keypoint,
+                fontsize=9, color='black')  # AND THIS
 
     for start, end in connec2_neutral:
         x1, y1 = keypoint_dict[start]
@@ -96,7 +100,7 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
         x1, y1 = keypoint_dict[start]
         x2, y2 = keypoint_dict[end]
         ax.plot([x1, x2], [y1, y2], 'red')
-
+    print(f"kp2 array len: {len(kp_array2)}")
     ax.set_aspect('equal')
     ax.invert_yaxis()  # Invert the y-axis to match typical image coordinates
     ax.set_xlabel('X')

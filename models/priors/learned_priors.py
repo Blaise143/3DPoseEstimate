@@ -13,13 +13,15 @@ class VariationalAutoEncoder(pl.LightningModule):
 
     def __init__(self, layers_order: list,
                  latent_dim: int = 10,
-                 dataset=None, dropout=0.3,
-                 learning_rate=3e-4) -> None:
+                 dataset=None,
+                 dropout: float = 0.3,
+                 learning_rate=3e-4, is_mocap=True) -> None:
         super().__init__()
+
         self.latent_dim = latent_dim
         self.learning_rate = learning_rate
         self.dataset = dataset
-
+        self.is_mocap = is_mocap
         # Encoder Layers
         encode_layers = []
         for i in range(len(layers_order) - 1):
@@ -112,16 +114,24 @@ class VariationalAutoEncoder(pl.LightningModule):
         return loss
 
     def _common_step(self, batch: torch.Tensor, batch_idx: int):
-        x, x_v = batch
+        (x, mask), (x_v, mask_v) = batch
+
+        # print(f"x shape: {x.shape}")
+        # print(f"mask shape: {mask.shape}")
+
+        mask = mask.repeat(1, 1, 2).reshape(x.shape)
+        mask_v = mask_v.repeat(1, 1, 2).reshape(x.shape)
+        # print(f"after repeat: {mask.shape}")
         reconstructed, mu, logvar = self.forward(x)
         reconstructed_v, mu_v, logvar_v = self.forward(x_v)
 
         # for x
-        recon_loss = self.reconstruction_loss(reconstructed, x)
+        recon_loss = self.reconstruction_loss(reconstructed*mask, x*mask)
         kl_divergence_loss = 0.2*self.kl_divergence_loss(mu, logvar)
 
         # for virtual
-        recon_loss_v = self.reconstruction_loss(reconstructed_v, x_v)
+        recon_loss_v = self.reconstruction_loss(
+            reconstructed_v*mask_v, x_v*mask_v)
         kl_divergence_loss_v = 0.2 * self.kl_divergence_loss(mu_v, logvar_v)
 
         losses = {
@@ -160,6 +170,13 @@ class VariationalAutoEncoder(pl.LightningModule):
         val_loader = DataLoader(
             self.val_dataset, batch_size=BATCH_SIZE, shuffle=False)
         return val_loader
+
+    def on_after_backward(self):
+        if self.trainer.global_step % self.trainer.log_every_n_steps == 0:  # Adjust frequency as needed
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    self.logger.experiment.log(
+                        {f"gradients/{name}": wandb.Histogram(param.grad.cpu().detach().numpy())})
 
 
 if __name__ == "__main__":

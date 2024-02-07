@@ -1,4 +1,5 @@
 import torch.nn as nn
+from typing import List
 
 
 class Encoder(nn.Module):
@@ -6,7 +7,7 @@ class Encoder(nn.Module):
     The encoder for the VQ-VAE
     """
 
-    def __init__(self, layers_order, dropout=0.3):
+    def __init__(self, layers_order: List[int], dropout: float = 0.3):
         super(Encoder, self).__init__()
         encode_layers = []
         for i in range(len(layers_order) - 1):

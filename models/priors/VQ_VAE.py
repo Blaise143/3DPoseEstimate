@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+from models.priors.vector_quantizer import VectorQuantizer
 
 
 class VQVAE(pl.LightningModule):

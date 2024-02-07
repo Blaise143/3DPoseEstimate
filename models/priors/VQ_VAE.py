@@ -1,17 +1,17 @@
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
-from models.priors.vector_quantizer import VectorQuantizer
+from models.priors import VectorQuantizer, Encoder, Decoder
 
 
 class VQVAE(pl.LightningModule):
     def __init__(self,
-                 encoder,
-                 decoder,
-                 num_embeddings,
-                 embedding_dim,
-                 commitment_cost,
-                 learning_rate=1e-3):
+                 encoder: Encoder,
+                 decoder: Decoder,
+                 num_embeddings: int,
+                 embedding_dim: int,
+                 commitment_cost: float,
+                 learning_rate: float = 1e-3):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder

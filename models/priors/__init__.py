@@ -1,2 +1,5 @@
 from .learned_priors import VariationalAutoEncoder
-from .hardcoded_priors import symmetry_loss, hip_leg_length_loss, joint_angle_loss
+from .hardcoded.hardcoded_priors import *
+from .decoder import Decoder
+from .encoder import Encoder
+from .vector_quantizer import VectorQuantizer

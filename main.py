@@ -11,6 +11,7 @@ from models.priors import VariationalAutoEncoder
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import ConcatDataset
+from models.priors import VQVAE
 
 
 wandb_logger = WandbLogger(save_dir="../checkpoints",
@@ -18,14 +19,14 @@ wandb_logger = WandbLogger(save_dir="../checkpoints",
 
 checkpoint_callback = ModelCheckpoint(
     dirpath="checkpoints",
-    monitor="val_loss",
+    monitor="val_recon_loss",
     # filename="vae_model_{epoch:02d}_val_loss_{val_loss:.2f}",
-    filename="mocap_model_again",
+    filename="vq_model",
     verbose=False,
     mode="min"
 )
 early_stopping_callback = EarlyStopping(
-    monitor="train_reconstruction_loss",
+    monitor="val_recon_loss",
     mode="min",
     patience=10
 )
@@ -39,13 +40,6 @@ custom_data = ConcatDataset([dataset_1, dataset_2])
 mocap_data = MocapDataset(path="data/HuMiD-yukagawa-clips")
 # print(f"mocap len: {len(mocap_data)}")
 # exit()
-
-first_img = mocap_data[0][0][0]
-sec_img = mocap_data[1][0][0]
-print(first_img)
-print(sec_img)
-# exit()
-
 
 layers_order = [38, 35, 30, 25, 20, 15]
 latent_dim = 15
@@ -66,9 +60,43 @@ def run_prior():
     trainer.fit(vae_model)
 
 
+def run_vq_prior():
+    model = VQVAE(
+        encoder_layers=layers_order,
+        decoder_layers=list(reversed(layers_order)),
+        num_embeddings=20,
+        embedding_dim=latent_dim,
+        commitment_cost=0.3,
+        learning_rate=1e-3,
+        dataset=mocap_data
+    )
+    print(model)
+    trainer = pl.Trainer(accelerator="gpu",
+                         devices="auto",
+                         max_epochs=50,
+                         callbacks=[checkpoint_callback],
+                         # early_stopping_callback],
+                         logger=wandb_logger,
+                         log_every_n_steps=3)  # ,
+    # check_val_every_n_epoch=20)
+    trainer.fit(model)
+
+
+# run_vq_prior()
+# print("EXITING")
+# exit()
 # run_prior()
 # print("EXITING!")
 # exit()
+vq_model = VQVAE(
+    encoder_layers=layers_order,
+    decoder_layers=list(reversed(layers_order)),
+    num_embeddings=20,
+    embedding_dim=latent_dim,
+    commitment_cost=0.3,
+    learning_rate=1e-3,
+    dataset=mocap_data
+)
 
 
 def load_checkpoint(checkpoint_path: str, model):
@@ -76,6 +104,16 @@ def load_checkpoint(checkpoint_path: str, model):
     model.load_state_dict(checkpoint_state_dict)
     return model
 
+
+vq_model = load_checkpoint("checkpoints/vq_model-v3.ckpt", vq_model)
+
+vq_model.eval()
+decoder = vq_model.decoder
+print(decoder)
+random_tensor = torch.randn(15)
+out = decoder(random_tensor).view(-1, 2)
+print(out)
+exit()
 
 inference_model = VariationalAutoEncoder(
     layers_order=layers_order, latent_dim=latent_dim)

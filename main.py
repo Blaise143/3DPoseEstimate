@@ -41,7 +41,7 @@ mocap_data = MocapDataset(path="data/HuMiD-yukagawa-clips")
 # print(f"mocap len: {len(mocap_data)}")
 # exit()
 
-layers_order = [38, 35, 30, 25, 20, 15]
+layers_order = [38, 35, 30, 20, 15]
 latent_dim = 15
 
 
@@ -51,7 +51,7 @@ def run_prior():
 
     trainer = pl.Trainer(accelerator="gpu",
                          devices="auto",
-                         max_epochs=50,
+                         max_epochs=15,
                          callbacks=[checkpoint_callback,
                                     early_stopping_callback],
                          logger=wandb_logger,
@@ -67,7 +67,7 @@ def run_vq_prior():
         num_embeddings=20,
         embedding_dim=latent_dim,
         commitment_cost=0.3,
-        learning_rate=1e-3,
+        learning_rate=1e-4,
         dataset=mocap_data
     )
     print(model)
@@ -105,53 +105,91 @@ def load_checkpoint(checkpoint_path: str, model):
     return model
 
 
-vq_model = load_checkpoint("checkpoints/vq_model-v3.ckpt", vq_model)
+vq_model = load_checkpoint("./checkpoints/vq_model-v5.ckpt", vq_model)
+
+
+def load_data(idx: int, data=mocap_data):
+    (real, _), (virtual, _) = mocap_data[idx]
+    return real, virtual
+
 
 vq_model.eval()
 decoder = vq_model.decoder
 print(decoder)
 random_tensor = torch.randn(15)
-out = decoder(random_tensor).view(-1, 2)
-print(out)
-exit()
+# out = decoder(random_tensor).view(-1, 2)
+# print(out)
+# (real, _), (virtual, _) = mocap_data[0]
+real, virtual = load_data(15)
+# print(f"real shape: {real.shape}, virtual shape: {virtual.shape}")
+# print("___")
+print(real.unsqueeze(0).shape)
+real_pred, _ = vq_model(real.unsqueeze(0))
+virtual_pred, _ = vq_model(virtual.unsqueeze(0))
 
-inference_model = VariationalAutoEncoder(
-    layers_order=layers_order, latent_dim=latent_dim)
+print(real_pred.squeeze(0))
+real_pred, virtual_pred = real_pred.squeeze(0).detach(
+).view(-1, 2), virtual_pred.squeeze(0).detach().view(-1, 2)
+print(
+    f"real pred shape: {real_pred.shape}, virtual pred shape: {virtual_pred.shape}")
+
+plot_keypoints(real.view(-1, 2), title="Real input")
+# plt.show()
+# plt.savefig("output_images/vq/passthrough/four.png")
+plot_keypoints(real_pred, title="Predicted Real")
+# plt.savefig("output_images/vq/passthrough/four_pred.png")
+# plt.show()
+plot_keypoints(virtual.view(-1, 2), title="Virtual Input")
+# plt.savefig("output_images/vq_outputs/real_two.png")
+# plt.savefig("output_images/vq/passthrough/four_v.png")
+
+# plt.show()
+plot_keypoints(virtual_pred, title="virtual pred")
+# plt.savefig("output_images/vq/passthrough/four_v_pred.png")
+
+# plt.show()
+# print(f"real_pred shape: {real_pred.shape}")
+# exit()
+
+# inference_model = VariationalAutoEncoder(
+# layers_order=layers_order, latent_dim=latent_dim)
 
 
-model = load_checkpoint("checkpoints/mocap_model_again.ckpt", inference_model)
-print("printing model")
-print(model)
-model.eval()
-random_tensor = torch.randn(15)
+# model = load_checkpoint("checkpoints/mocap_model_again.ckpt", inference_model)
+# print("printing model")
+# print(model)
+# model.eval()
+# random_tensor = torch.randn(15)
 
-out_passthrough_1 = model(first_img.unsqueeze(0))[
-    0][0].squeeze(0).detach().view(-1, 2)
-out_passthrough_2 = model(sec_img.unsqueeze(0))[
-    0][0].squeeze(0).detach().view(-1, 2)
-print("out 1")
-print(out_passthrough_1)
-plot_keypoints(out_passthrough_1, title="mocap_reconstructed_1_again")
-plt.savefig("output_images/passthrough/img_1_pred_again.png")
-print("out 2")
-print(out_passthrough_2)
-plot_keypoints(out_passthrough_2, title="mocap_reconstructed_2_again")
-plt.savefig("output_images/passthrough/img_2_pred_again.png")
-plot_keypoints(first_img.view(-1, 2), title="actual_1")
-plt.savefig("output_images/passthrough/img_1.png")
-plot_keypoints(sec_img.view(-1, 2), title="actual_2")
-plt.savefig("output_images/passthrough/img_2.png")
+# out_passthrough_1 = model(first_img.unsqueeze(0))[
+#     0][0].squeeze(0).detach().view(-1, 2)
+# out_passthrough_2 = model(sec_img.unsqueeze(0))[
+#     0][0].squeeze(0).detach().view(-1, 2)
+# print("out 1")
+# print(out_passthrough_1)
+# plot_keypoints(out_passthrough_1, title="mocap_reconstructed_1_again")
+# plt.savefig("output_images/passthrough/img_1_pred_again.png")
+# print("out 2")
+# print(out_passthrough_2)
+# plot_keypoints(out_passthrough_2, title="mocap_reconstructed_2_again")
+# plt.savefig("output_images/passthrough/img_2_pred_again.png")
+# plot_keypoints(first_img.view(-1, 2), title="actual_1")
+# plt.savefig("output_images/passthrough/img_1.png")
+# plot_keypoints(sec_img.view(-1, 2), title="actual_2")
+# plt.savefig("output_images/passthrough/img_2.png")
 
 # exit()
 
-decoder = model.decoder
+# decoder = model.decoder
+decoder = vq_model.decoder
 print("printing decoder")
 print(decoder)
+random_tensor = torch.randn(15)
 out = decoder(random_tensor).view(-1, 2).detach()
 plot_keypoints(out, title="random plot")
-plt.savefig("output_images/random_generations/mocap_random_plot_again.png")
-plt.show()
-print(out)
+plt.savefig("output_images/vq/generations/three.png")
+# plt.show()
+# print(out)
 exit()
 
 

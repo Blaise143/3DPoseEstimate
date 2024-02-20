@@ -4,6 +4,9 @@ from models.priors.quantizer import VectorQuantizer
 
 
 class TestVectorQuantizer(unittest.TestCase):
+    """
+    Tests for vector quantizer
+    """
 
     def setUp(self):
         # Initialize some common parameters and the VectorQuantizer instance

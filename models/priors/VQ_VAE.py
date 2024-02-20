@@ -16,7 +16,7 @@ class VQVAE(pl.LightningModule):
                  num_embeddings: int,
                  embedding_dim: int,
                  commitment_cost: float,
-                 learning_rate: float = 1e-3,
+                 learning_rate: float = 1e-4,
                  encoder_dropout: float = 0.3,
                  decoder_dropout: float = 0.3,
                  dataset=None):
@@ -42,6 +42,8 @@ class VQVAE(pl.LightningModule):
 
         mask = mask.repeat(1, 1, 2).reshape(x.shape)
         mask_v = mask_v.repeat(1, 1, 2).reshape(x.shape)
+        # print(mask)
+        # print(mask_v)
 
         recon_loss = self.reconstruction_loss(recon_x*mask, x*mask)
         recon_loss_v = self.reconstruction_loss(recon_x_v*mask_v, x_v*mask_v)

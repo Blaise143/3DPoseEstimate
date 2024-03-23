@@ -21,7 +21,7 @@ checkpoint_callback = ModelCheckpoint(
     dirpath="checkpoints",
     monitor="val_recon_loss",
     # filename="vae_model_{epoch:02d}_val_loss_{val_loss:.2f}",
-    filename="vq_model",
+    filename="vq_model_3",
     verbose=False,
     mode="min"
 )
@@ -64,7 +64,7 @@ def run_vq_prior():
     model = VQVAE(
         encoder_layers=layers_order,
         decoder_layers=list(reversed(layers_order)),
-        num_embeddings=20,
+        num_embeddings=512,
         embedding_dim=latent_dim,
         commitment_cost=0.3,
         learning_rate=1e-4,
@@ -91,7 +91,7 @@ def run_vq_prior():
 vq_model = VQVAE(
     encoder_layers=layers_order,
     decoder_layers=list(reversed(layers_order)),
-    num_embeddings=20,
+    num_embeddings=512,
     embedding_dim=latent_dim,
     commitment_cost=0.3,
     learning_rate=1e-3,
@@ -105,7 +105,21 @@ def load_checkpoint(checkpoint_path: str, model):
     return model
 
 
-vq_model = load_checkpoint("./checkpoints/vq_model-v5.ckpt", vq_model)
+vq_model = load_checkpoint("./checkpoints/vq_model_3.ckpt", vq_model)
+
+print(vq_model)
+codebook = vq_model.quantizer.embedding.weight.data
+print(f"code book: {codebook.shape}")
+decoder = vq_model.decoder
+for i in range(len(codebook)):
+    # print(len(codebook))
+    vector = codebook[i]
+    out = decoder(vector.unsqueeze(0)).detach().squeeze(0).view(-1, 2)
+    # print(out)
+    plot_keypoints(out, title=f"Vector {i}")
+    plt.savefig(f"output_images/vq2/codebook2/{i}.png")
+    print(out.shape)
+exit()
 
 
 def load_data(idx: int, data=mocap_data):
@@ -186,8 +200,8 @@ print("printing decoder")
 print(decoder)
 random_tensor = torch.randn(15)
 out = decoder(random_tensor).view(-1, 2).detach()
-plot_keypoints(out, title="random plot")
-plt.savefig("output_images/vq/generations/three.png")
+# plot_keypoints(out, title="random plot")
+# plt.savefig("output_images/vq/generations/three.png")
 # plt.show()
 # print(out)
 exit()

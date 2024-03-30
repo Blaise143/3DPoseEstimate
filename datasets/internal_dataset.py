@@ -44,7 +44,7 @@ class CustomDataset(Dataset):
         self.reflections = reflections
 
     @staticmethod
-    def euclidean_distance(point1, point2):
+    def euclidean_distance(point1: torch.tensor, point2: torch.tensor)->float:
         x_1, y_1 = point1
         x_2, y_2 = point2
         squared_diff_x = (x_1 - x_2) ** 2
@@ -69,13 +69,19 @@ class CustomDataset(Dataset):
     def __len__(self) -> int:
         return len(self.humans)
 
-    def __getitem__(self, idx: int) -> torch.tensor:
+    def __getitem__(self, idx: int) -> Tuple[torch.tensor]:
         human = self.humans[idx]
         reflection = self.reflections[idx]
         return human, reflection
 
 
 if __name__ == "__main__":
-    path = "../data/Abi/detections/alphapose-results.json"
+    abi_path = "../data/Abi/detections/alphapose-results.json"
+    frank_path = "../data/Frank/detections/alphapose-results.json"
 
-    custom = CustomDataset("../data/Abi/detections/alphapose-results.json")
+    some_data = json.load(open(frank_path))
+    # print(some_data[1]["keypoints"])
+
+    custom = CustomDataset(frank_path)
+    print(len(custom))
+    print(custom[0])

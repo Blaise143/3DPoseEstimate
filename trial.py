@@ -1,32 +1,29 @@
-# from models.priors import VectorQuantizer
-import json
-import warnings
-import os
-import re
+from datasets import InternalCustomData
+from utils import plot_keypoints, plot_J1_overlay
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+frank_path = "data/Frank/detections/alphapose-results.json"
+abi_path = "data/Abi/detections/alphapose-results.json"
 
-warnings.filterwarnings("ignore")
-# print(VectorQuantizer)
+img_path = "data/Abi/frames/00000000.jpg"
 
-abi_vis = []
-frank_vis = []
-pattern = re.compile(r'\^._')
+im = plt.imread(img_path)
 
-abi_vis = sorted(os.listdir("data/Abi/detections/vis"))
-frank_vis = sorted(os.listdir("data/Frank/detections/vis"))[1:]
+data = InternalCustomData(abi_path, vis_list_path="data/Abi/vis_list.json")
+frank = InternalCustomData(frank_path, vis_list_path="data/Frank/vis_list.json")
 
-print(abi_vis); print(frank_vis)
-print(abi_vis == frank_vis)
-exit()
+# print(data[0][0])
+human = data[1900][0]
+reflection = data[1900][1]
 
-abi_path = "data/Abi/vis_list.json"
-frank_path = "data/Frank/vis_list.json"
+f_0 = frank[1990][0]
+f_1 = frank[1990][1]
+print(f"shape: {f_1.shape}")
 
-with open(abi_path, "w") as file:
-    json.dump(abi_vis, file)
-
-with open(frank_path, "w") as file:
-    json.dump(frank_vis, file)
-# abi_vis = {}
-
-print(abi_vis); print(frank_vis)
-print(len(abi_vis)); print(len(frank_vis))
+# print(human)
+plot_J1_overlay(data=f_0, mirror_data=f_1, image_path="data/Frank/frames/00001990.jpg")
+plt.show()
+# plot = plt.imshow(im)
+# plot_keypoints(human, kind="J1", title="Yo")
+# plot_keypoints(reflection, kind="J1", title="Yo")
+# plt.show()

@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from torch.utils.data import Dataset
 import os
 import json
@@ -48,7 +47,8 @@ class TestCustomDataset(Dataset):
         self.real, self.virtual = real.reshape(
             real.shape[0], -1), virtual.reshape(virtual.shape[0], -1)
 
-    def scale_by_height(self, data: torch.Tensor) -> torch.Tensor:
+    @staticmethod
+    def scale_by_height(data: torch.Tensor) -> torch.Tensor:
         # expects data.shape = (batch_size, N, 2)
         min_vals = torch.min(data, dim=1, keepdim=True).values
         max_vals = torch.max(data, dim=1, keepdim=True).values

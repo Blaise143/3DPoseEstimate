@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 from torch.utils.data import Dataset
 import json
 from collections import OrderedDict
@@ -11,6 +12,10 @@ keypoint_array = ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 'lef
 
 
 class CustomDataset(Dataset):
+    """
+    Custom dataset for internal video data, meaning Abi and Frank frames
+    """
+
     def __init__(self, path: str, vis_list_path: str = "../data/Abi/vis_list.json"):
         data = json.load(open(path))
         vis_list = json.load(open(vis_list_path))
@@ -39,12 +44,39 @@ class CustomDataset(Dataset):
         humans = torch.tensor(humans)
         reflections = torch.tensor(reflections)
 
+        # scaling by height
+        humans, reflections = self.scale_by_height(humans), self.scale_by_height(reflections)
+
+        # centering at hip which is located at index 19
+        humans, reflections = self.center_at_hip(humans), self.center_at_hip(reflections)
         assert humans.shape == reflections.shape, "There should be an equal number of real and reflection poses"
         self.humans = humans
         self.reflections = reflections
 
     @staticmethod
-    def euclidean_distance(point1: torch.tensor, point2: torch.tensor)->float:
+    def scale_by_height(data: torch.Tensor) -> torch.Tensor:
+        # expects data.shape = (batch_size, N, 2)
+        min_vals = torch.min(data[..., 1], dim=1, keepdim=True).values
+        max_vals = torch.max(data[..., 1], dim=1, keepdim=True).values
+        height = max_vals - min_vals
+        # max_size = torch.max(size, dim=2, keepdim=True).values
+
+        scale_factor = 1.0 / torch.clamp(height, min=1e-6)
+        data[..., 1] = (data[..., 1] - min_vals) * scale_factor
+        data[..., 0] = (data[..., 0] - min_vals) * scale_factor
+        # data = (data - torch.min(data, dim=1, keepdim=True).values) * scale_factor
+
+        return data
+
+    @staticmethod
+    def center_at_hip(data: torch.tensor, hip_idx: int = 19) -> torch.tensor:
+        # also expects data.shape = (batch_size, N, 2)
+        centers = data[:, hip_idx]
+        centered = data - centers.unsqueeze(1)
+        return centered
+
+    @staticmethod
+    def euclidean_distance(point1: torch.tensor, point2: torch.tensor) -> float:
         x_1, y_1 = point1
         x_2, y_2 = point2
         squared_diff_x = (x_1 - x_2) ** 2
@@ -69,7 +101,7 @@ class CustomDataset(Dataset):
     def __len__(self) -> int:
         return len(self.humans)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.tensor]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
         human = self.humans[idx]
         reflection = self.reflections[idx]
         return human, reflection
@@ -83,5 +115,11 @@ if __name__ == "__main__":
     # print(some_data[1]["keypoints"])
 
     custom = CustomDataset(frank_path)
+
     print(len(custom))
     print(custom[0])
+    # some_abi_data = json.load(open(abi_path))
+    custom_b = CustomDataset(abi_path)
+    # print(len(custom_b))
+    print(custom_b[0])
+    print("Printed stuff")

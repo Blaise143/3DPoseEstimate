@@ -33,9 +33,10 @@ class MocapDataset(Dataset):
 
         # Sentinel value for missing keypoints
         missing_value = -999
+        print(len(real), len(virtual))
+        exit()
 
-        real, virtual = torch.tensor(
-            real)[:, :-6, :], torch.tensor(virtual)[:, :-6, :]
+        real, virtual = torch.tensor(real)[:, :-6, :], torch.tensor(virtual)[:, :-6, :]
 
         # Masking before scaling
         real_mask = (real != 0).all(dim=-1, keepdim=True).float()
@@ -44,10 +45,6 @@ class MocapDataset(Dataset):
         # scaling real and virtual
         real = self.scale_by_height(real)
         virtual = self.scale_by_height(virtual)
-
-        # real[real_mask] = missing_value
-        # virtual[virtul_mask] = missing_value
-
         # check this
         real_center = real[:, 8, :].unsqueeze(1)
         virtual_center = virtual[:, 8, :].unsqueeze(1)
@@ -71,7 +68,8 @@ class MocapDataset(Dataset):
         self.real, self.virtual = real.reshape(
             real.shape[0], -1), virtual.reshape(virtual.shape[0], -1)
 
-    def scale_by_height(self, data: torch.Tensor) -> torch.Tensor:
+    @staticmethod
+    def scale_by_height(data: torch.Tensor) -> torch.Tensor:
         # expects data.shape = (batch_size, N, 2)
         min_vals = torch.min(data, dim=1, keepdim=True).values
         max_vals = torch.max(data, dim=1, keepdim=True).values

@@ -6,7 +6,9 @@ kp_array1 = ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 'left_sho
                  'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist', 'left_hip', 'right_hip', 'left_knee',
                  'right_knee', 'left_ankle', 'right_ankle', 'head', 'neck', 'hip', 'left_toe', 'right_toe',
                  'left_small_toe', 'right_small_toe', 'left_heel', 'right_heel']
-
+print(len(kp_array1))
+print(26*3)
+exit()
 
 def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot") -> None:
     """
@@ -137,9 +139,9 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     ax.set_ylabel('Y')
     ax.set_title(title)
     ax.grid()
-    plt.gca().set_aspect("equal")
+    # plt.gca().set_aspect("equal")
     # setting figsize
-    plt.rcParams["figure.figsize"] = (18, 10)
+    # plt.rcParams["figure.figsize"] = (18, 10)
     return fig
 
 def plot_J1_overlay(

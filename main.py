@@ -13,7 +13,6 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import ConcatDataset
 from models.priors import VQVAE
 
-
 wandb_logger = WandbLogger(save_dir="../checkpoints",
                            project="Mirror_Project",)
 

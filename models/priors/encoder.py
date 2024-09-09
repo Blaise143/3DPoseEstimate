@@ -11,12 +11,14 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         encode_layers = []
         for i in range(len(layers_order) - 2):
-            encode_layers.extend([
-                nn.Linear(layers_order[i], layers_order[i + 1]),
-                # nn.BatchNorm1d(num_features=layers_order[i+1]),
-                nn.ReLU(),
-                nn.Dropout(dropout)
-            ])
+            encode_layers.extend(
+                [
+                    nn.Linear(layers_order[i], layers_order[i + 1]),
+                    # nn.BatchNorm1d(num_features=layers_order[i+1]),
+                    nn.ReLU(),
+                    nn.Dropout(dropout)
+                ]
+            )
         encode_layers.append(nn.Linear(layers_order[-2], layers_order[-1]))
         self.layers = nn.Sequential(*encode_layers)
 

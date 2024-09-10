@@ -73,11 +73,10 @@ class TestCustomDataset(Dataset):
 
 
 if __name__ == "__main__":
-    pth = "../../data/zju-m-seq1/annots/3"
-    pth2 = "../../data/zju-m-seq1/annots/4"
+    pth = "../data/zju-m-seq1/annots/3"
 
-    pth3 = "../../data/zju-m-seq1/annots/5"
-    pth4 = "../../data/zju-m-seq1/annots/6"
+    pth3 = "../data/zju-m-seq1/annots/5"
+    pth4 = "../data/zju-m-seq1/annots/6"
 
     from torch.utils.data import ConcatDataset
     dataset = TestCustomDataset(path=pth)

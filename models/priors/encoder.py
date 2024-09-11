@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from typing import List
 
@@ -28,6 +29,9 @@ class Encoder(nn.Module):
 
 if __name__ == "__main__":
     m = Encoder(
-        [38, 25, 23, 15]
+        [52, 38, 25, 23, 15]
     )
+    rand = torch.rand(52)
+    print(rand)
     print(m)
+    print(m(rand).shape)

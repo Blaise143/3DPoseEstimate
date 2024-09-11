@@ -24,3 +24,12 @@ class Decoder(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
+
+
+if __name__ == "__main__":
+    import torch
+
+    layers = [16, 24, 56, 232]
+    net = Decoder(layers)
+    random_tensor = torch.rand(layers[0])
+    assert net(random_tensor).shape[0] == layers[-1]

@@ -10,8 +10,8 @@ class LiftNet(nn.Module):
 
     def __init__(self,
                  layers_list: tuple[int] = (38, 52, 256, 256, 128, 57),
-                 activation=nn.ReLU(),
-                 dropout=0.2):
+                 activation: nn.Module = nn.ReLU(),
+                 dropout: float = 0.2) -> None:
         super().__init__()
         layers = nn.ModuleList()
         for i in range(len(layers_list)): # [0,1,2,3,4]

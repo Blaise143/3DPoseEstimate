@@ -14,6 +14,6 @@ r_0 = data[0][1].view(-1, 2)
 
 print(h_0.shape)
 plot_keypoints(h_0)
-plt.savefig("output_images/visualizations/first.png")
+plt.savefig("output_images/visualizations/first_.png")
 plot_keypoints(r_0)
-plt.savefig("output_images/visualizations/sec.png")
+plt.savefig("output_images/visualizations/sec23.png")

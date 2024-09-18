@@ -7,7 +7,7 @@ class Decoder(nn.Module):
     The decoder for the VQ-VAE
     """
 
-    def __init__(self, layers_order: List[int], dropout: float = 0.3):
+    def __init__(self, layers_order: List[int], dropout: float = 0.3, use_convs: bool = False):
         super(Decoder, self).__init__()
         decode_layers = []
         for i in range(len(layers_order) - 2):
@@ -24,6 +24,15 @@ class Decoder(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
+
+
+class CNN_Encoder(nn.Module):
+    def __init__(self, input_size: int, latent_dim: int, *args, **kwargs) -> None:
+        super().__init__()
+        layer1 = nn.Sequential(
+            nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, stride=2,)
+        )
+
 
 
 if __name__ == "__main__":

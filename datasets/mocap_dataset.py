@@ -33,8 +33,8 @@ class MocapDataset(Dataset):
 
         # Sentinel value for missing keypoints
         missing_value = -999
-        print(len(real), len(virtual))
-        exit()
+        # print(len(real), len(virtual))
+        # exit()
 
         real, virtual = torch.tensor(real)[:, :-6, :], torch.tensor(virtual)[:, :-6, :]
 
@@ -42,6 +42,8 @@ class MocapDataset(Dataset):
         real_mask = (real != 0).all(dim=-1, keepdim=True).float()
         virtul_mask = (virtual != 0).all(dim=-1, keepdim=True).float()
 
+        # print(real_mask)
+        # exit()
         # scaling real and virtual
         real = self.scale_by_height(real)
         virtual = self.scale_by_height(virtual)
@@ -57,7 +59,9 @@ class MocapDataset(Dataset):
 
         real, virtual = real[:, :, :2], virtual[:, :, :2]
         assert real.shape == virtual.shape
-
+        # print(real.shape, virtual.shape)
+        # print(real[0])
+        # exit()
         # shuffling
         indices = torch.randperm(real.shape[0])
         real = real[indices]
@@ -96,8 +100,9 @@ class MocapDataset(Dataset):
 
 
 if __name__ == "__main__":
-    path = "data/HuMiD-yukagawa-clips"
+    path = "../data/HuMiD-yukagawa-clips"
     data = MocapDataset(path)
     print(len(data))
-    print(data[0])
-    print(data[0][0].shape)
+    a, b = data[0]
+    print(type(a))
+    # print(data[0][0].shape)

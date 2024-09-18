@@ -106,6 +106,8 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     keypoint_dict = dict(zip(keypoint_array, keypoint_coordinates))
 
     fig, ax = plt.subplots()
+    # plt.close()
+    plt.ioff()
     print(f"dict: {keypoint_dict}")
     for keypoint in keypoint_array:
         x, y = keypoint_dict[keypoint]
@@ -142,7 +144,9 @@ def plot_keypoints(data: torch.tensor, kind: str = 'J2', title: str = "2D plot")
     plt.gca().set_aspect("equal")
     # setting figsize
     plt.rcParams["figure.figsize"] = (18, 10)
+
     return fig
+    # return
 
 def plot_J1_overlay(
         data: torch.tensor,

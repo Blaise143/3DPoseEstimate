@@ -19,21 +19,35 @@ class VQVAE(pl.LightningModule):
                  learning_rate: float = 1e-4,
                  encoder_dropout: float = 0.3,
                  decoder_dropout: float = 0.3,
+                 denoise: bool = False,
                  dataset=None):
         super(VQVAE, self).__init__()
         self.encoder = Encoder(encoder_layers, dropout=encoder_dropout)
         self.decoder = Decoder(decoder_layers, dropout=decoder_dropout)
         self.quantizer = VectorQuantizer(
-            num_embeddings, embedding_dim, commitment_cost)
+            num_embeddings, embedding_dim, commitment_cost, ortho_loss_weight=0)
         self.learning_rate = learning_rate
         self.reconstruction_loss = nn.MSELoss()
         self.dataset = dataset
+        self.denoise = denoise
+        if self.denoise:
+            print("this is denoising")
 
     def forward(self, x):
-        z = self.encoder(x)
+        if self.denoise:
+            noisy_x = self.add_noise(x)
+            z = self.encoder(noisy_x)
+        else:
+            z = self.encoder(x)
         quantized, quantization_loss, _, _ = self.quantizer(z)
         recon_x = self.decoder(quantized)
         return recon_x, quantization_loss
+
+    @staticmethod
+    def add_noise(x, noise_factor=0.1):
+        noise = torch.randn_like(x) * noise_factor
+        x = x + noise
+        return x
 
     def _common_step(self, batch, batch_idx):
         (x, mask), (x_v, mask_v) = batch
@@ -45,13 +59,13 @@ class VQVAE(pl.LightningModule):
         # print(mask)
         # print(mask_v)
 
-        recon_loss = self.reconstruction_loss(recon_x*mask, x*mask)
-        recon_loss_v = self.reconstruction_loss(recon_x_v*mask_v, x_v*mask_v)
+        recon_loss = self.reconstruction_loss(recon_x * mask, x * mask)
+        recon_loss_v = self.reconstruction_loss(recon_x_v * mask_v, x_v * mask_v)
 
-        total_recon_loss = recon_loss+recon_loss_v
+        total_recon_loss = recon_loss + recon_loss_v
         total_quant_loss = quantization_loss + quantization_loss_v
 
-        loss = 0.2*total_quant_loss+total_recon_loss
+        loss = (0.1 * total_quant_loss) + total_recon_loss
 
         return total_recon_loss, total_quant_loss, loss
 
@@ -72,13 +86,13 @@ class VQVAE(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=0.001)
         return optimizer
 
     def setup(self, stage=None):
         dataset_size = len(self.dataset)
-        train_size = int(0.8*dataset_size)
-        val_size = dataset_size-train_size
+        train_size = int(0.8 * dataset_size)
+        val_size = dataset_size - train_size
 
         self.train_dataset, self.val_dataset = random_split(
             self.dataset, [train_size, val_size])

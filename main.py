@@ -20,7 +20,7 @@ checkpoint_callback = ModelCheckpoint(
     dirpath="checkpoints",
     monitor="val_recon_loss",
     # filename="vae_model_{epoch:02d}_val_loss_{val_loss:.2f}",
-    filename="vq_model_3",
+    filename="vq_model_5",
     verbose=False,
     mode="min"
 )
@@ -36,12 +36,16 @@ dataset_1 = TestCustomDataset(path)
 dataset_2 = TestCustomDataset(path_2)
 custom_data = ConcatDataset([dataset_1, dataset_2])
 
-mocap_data = MocapDataset(path="data/HuMiD-yukagawa-clips")
-# print(f"mocap len: {len(mocap_data)}")
+print(len(custom_data))
 # exit()
 
-layers_order = [38, 35, 30, 20, 15]
-latent_dim = 15
+
+mocap_data = MocapDataset(path="data/HuMiD-yukagawa-clips")
+print(f"mocap len: {len(mocap_data)}")
+# exit()
+
+layers_order = [38, 70, 100, 128]
+latent_dim = 128
 
 
 def run_prior():
@@ -63,16 +67,17 @@ def run_vq_prior():
     model = VQVAE(
         encoder_layers=layers_order,
         decoder_layers=list(reversed(layers_order)),
-        num_embeddings=512,
+        num_embeddings=128,
         embedding_dim=latent_dim,
         commitment_cost=0.3,
         learning_rate=1e-4,
-        dataset=mocap_data
+        dataset=mocap_data,
+        denoise=True
     )
-    print(model)
+    # print(model)
     trainer = pl.Trainer(accelerator="gpu",
                          devices="auto",
-                         max_epochs=50,
+                         max_epochs=30,
                          callbacks=[checkpoint_callback],
                          # early_stopping_callback],
                          logger=wandb_logger,
@@ -90,11 +95,12 @@ def run_vq_prior():
 vq_model = VQVAE(
     encoder_layers=layers_order,
     decoder_layers=list(reversed(layers_order)),
-    num_embeddings=512,
+    num_embeddings=128,
     embedding_dim=latent_dim,
     commitment_cost=0.3,
-    learning_rate=1e-3,
-    dataset=mocap_data
+    learning_rate=1e-4,
+    dataset=mocap_data,
+    denoise=True
 )
 
 
@@ -104,19 +110,20 @@ def load_checkpoint(checkpoint_path: str, model):
     return model
 
 
-vq_model = load_checkpoint("./checkpoints/vq_model_3.ckpt", vq_model)
+vq_model = load_checkpoint("./checkpoints/vq_model_5.ckpt", vq_model)
 
 print(vq_model)
+# exit()
 codebook = vq_model.quantizer.embedding.weight.data
 print(f"code book: {codebook.shape}")
 decoder = vq_model.decoder
-for i in range(len(codebook)):
+for i in range(10):#(len(codebook)-490):
     # print(len(codebook))
     vector = codebook[i]
     out = decoder(vector.unsqueeze(0)).detach().squeeze(0).view(-1, 2)
     # print(out)
     plot_keypoints(out, title=f"Vector {i}")
-    plt.savefig(f"output_images/vq2/codebook2/{i}.png")
+    plt.savefig(f"output_images/vq3/codebook/{i}_denoise_lessEmbeddings.png")
     print(out.shape)
 exit()
 

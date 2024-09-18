@@ -6,3 +6,4 @@ checkpoints/wandb/
 checkpoints/Mirror_Project/
 .DS_Store
 assets/.DS_Store
+.idea

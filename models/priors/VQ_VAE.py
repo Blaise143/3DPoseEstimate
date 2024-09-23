@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
-from models.priors import VectorQuantizer, Encoder, Decoder
+from models.priors import VectorQuantizer, Encoder, Decoder, EMAQuantizer
 from typing import List
 from torch.utils.data import DataLoader, random_split
 
@@ -20,16 +20,25 @@ class VQVAE(pl.LightningModule):
                  encoder_dropout: float = 0.3,
                  decoder_dropout: float = 0.3,
                  denoise: bool = False,
-                 dataset=None):
+                 dataset=None,
+                 use_ema = False):
         super(VQVAE, self).__init__()
         self.encoder = Encoder(encoder_layers, dropout=encoder_dropout)
         self.decoder = Decoder(decoder_layers, dropout=decoder_dropout)
-        self.quantizer = VectorQuantizer(
-            num_embeddings, embedding_dim, commitment_cost, ortho_loss_weight=0)
+        if use_ema:
+            self.quantizer = EMAQuantizer(
+                num_embeddings, embedding_dim,commitment_cost, decay=0.7, ortho_loss_weight=0
+            )
+            print("using ema")
+        else:
+            self.quantizer = VectorQuantizer(
+                num_embeddings, embedding_dim, commitment_cost, ortho_loss_weight=0)
+
         self.learning_rate = learning_rate
         self.reconstruction_loss = nn.MSELoss()
         self.dataset = dataset
         self.denoise = denoise
+        self.use_ema = use_ema
         if self.denoise:
             print("this is denoising")
 

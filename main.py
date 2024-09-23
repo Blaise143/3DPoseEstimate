@@ -20,7 +20,7 @@ checkpoint_callback = ModelCheckpoint(
     dirpath="checkpoints",
     monitor="val_recon_loss",
     # filename="vae_model_{epoch:02d}_val_loss_{val_loss:.2f}",
-    filename="vq_model_5",
+    filename="ema",
     verbose=False,
     mode="min"
 )
@@ -44,9 +44,10 @@ mocap_data = MocapDataset(path="data/HuMiD-yukagawa-clips")
 print(f"mocap len: {len(mocap_data)}")
 # exit()
 
-layers_order = [38, 70, 100, 128]
-latent_dim = 128
-
+# layers_order = [38, 70, 100, 128]
+# latent_dim = 128
+layers_order = [38, 35, 30, 25, 20, 15]
+latent_dim = 15
 
 def run_prior():
     vae_model = VariationalAutoEncoder(
@@ -72,7 +73,8 @@ def run_vq_prior():
         commitment_cost=0.3,
         learning_rate=1e-4,
         dataset=mocap_data,
-        denoise=True
+        denoise=False,
+        use_ema=True
     )
     # print(model)
     trainer = pl.Trainer(accelerator="gpu",
@@ -86,9 +88,9 @@ def run_vq_prior():
     trainer.fit(model)
 
 
-# run_vq_prior()
-# print("EXITING")
-# exit()
+run_vq_prior()
+print("EXITING")
+exit()
 # run_prior()
 # print("EXITING!")
 # exit()
@@ -100,7 +102,8 @@ vq_model = VQVAE(
     commitment_cost=0.3,
     learning_rate=1e-4,
     dataset=mocap_data,
-    denoise=True
+    denoise=False,
+    use_ema=True
 )
 
 
@@ -110,7 +113,7 @@ def load_checkpoint(checkpoint_path: str, model):
     return model
 
 
-vq_model = load_checkpoint("./checkpoints/vq_model_5.ckpt", vq_model)
+vq_model = load_checkpoint("./checkpoints/ema.ckpt", vq_model)
 
 print(vq_model)
 # exit()
@@ -123,8 +126,8 @@ for i in range(10):#(len(codebook)-490):
     out = decoder(vector.unsqueeze(0)).detach().squeeze(0).view(-1, 2)
     # print(out)
     plot_keypoints(out, title=f"Vector {i}")
-    plt.savefig(f"output_images/vq3/codebook/{i}_denoise_lessEmbeddings.png")
-    print(out.shape)
+    plt.savefig(f"output_images/vq3/codebook/{i}_ema.png")
+    # print(out.shape)
 exit()
 
 

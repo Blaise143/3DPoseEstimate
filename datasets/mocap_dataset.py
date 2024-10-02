@@ -64,6 +64,8 @@ class MocapDataset(Dataset):
         # exit()
         # shuffling
         indices = torch.randperm(real.shape[0])
+        # print(f"indices: {indices}")
+        # print(f"indices shape: {indices.shape}")
         real = real[indices]
         virtual = virtual[indices]
         self.real_mask = real_mask[indices]

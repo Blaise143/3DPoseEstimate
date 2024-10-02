@@ -36,18 +36,19 @@ dataset_1 = TestCustomDataset(path)
 dataset_2 = TestCustomDataset(path_2)
 custom_data = ConcatDataset([dataset_1, dataset_2])
 
-print(len(custom_data))
+# print(len(custom_data))
+
 # exit()
 
 
 mocap_data = MocapDataset(path="data/HuMiD-yukagawa-clips")
-print(f"mocap len: {len(mocap_data)}")
-# exit()
+print(f"mocap len: {len(mocap_data)/500}")
+exit()
 
-# layers_order = [38, 70, 100, 128]
-# latent_dim = 128
-layers_order = [38, 35, 30, 25, 20, 15]
-latent_dim = 15
+layers_order = [38, 70, 100, 128]
+latent_dim = 128
+# layers_order = [38, 35, 30, 25, 20, 15]
+# latent_dim = 15
 
 def run_prior():
     vae_model = VariationalAutoEncoder(
@@ -68,18 +69,18 @@ def run_vq_prior():
     model = VQVAE(
         encoder_layers=layers_order,
         decoder_layers=list(reversed(layers_order)),
-        num_embeddings=128,
+        num_embeddings=50,
         embedding_dim=latent_dim,
-        commitment_cost=0.3,
+        commitment_cost=1.,
         learning_rate=1e-4,
         dataset=mocap_data,
-        denoise=False,
+        denoise=True,
         use_ema=True
     )
     # print(model)
     trainer = pl.Trainer(accelerator="gpu",
                          devices="auto",
-                         max_epochs=30,
+                         max_epochs=10,
                          callbacks=[checkpoint_callback],
                          # early_stopping_callback],
                          logger=wandb_logger,
@@ -88,16 +89,16 @@ def run_vq_prior():
     trainer.fit(model)
 
 
-run_vq_prior()
-print("EXITING")
-exit()
+# run_vq_prior()
+# print("EXITING")
+# exit()
 # run_prior()
 # print("EXITING!")
 # exit()
 vq_model = VQVAE(
     encoder_layers=layers_order,
     decoder_layers=list(reversed(layers_order)),
-    num_embeddings=128,
+    num_embeddings=50,
     embedding_dim=latent_dim,
     commitment_cost=0.3,
     learning_rate=1e-4,
@@ -120,7 +121,7 @@ print(vq_model)
 codebook = vq_model.quantizer.embedding.weight.data
 print(f"code book: {codebook.shape}")
 decoder = vq_model.decoder
-for i in range(10):#(len(codebook)-490):
+for i in range(50):#(len(codebook)-490):
     # print(len(codebook))
     vector = codebook[i]
     out = decoder(vector.unsqueeze(0)).detach().squeeze(0).view(-1, 2)

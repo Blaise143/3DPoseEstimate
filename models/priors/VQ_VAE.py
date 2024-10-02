@@ -21,13 +21,15 @@ class VQVAE(pl.LightningModule):
                  decoder_dropout: float = 0.3,
                  denoise: bool = False,
                  dataset=None,
-                 use_ema = False):
+                 use_ema=False,
+                 mask: bool = True):
         super(VQVAE, self).__init__()
         self.encoder = Encoder(encoder_layers, dropout=encoder_dropout)
         self.decoder = Decoder(decoder_layers, dropout=decoder_dropout)
         if use_ema:
             self.quantizer = EMAQuantizer(
-                num_embeddings, embedding_dim,commitment_cost, decay=0.7, ortho_loss_weight=0
+                num_embeddings, embedding_dim, commitment_cost, decay=0.9, ortho_loss_weight=0.1, reset_codebook=True,
+                reset_threshold=0.1
             )
             print("using ema")
         else:
@@ -39,6 +41,7 @@ class VQVAE(pl.LightningModule):
         self.dataset = dataset
         self.denoise = denoise
         self.use_ema = use_ema
+        self.mask = mask
         if self.denoise:
             print("this is denoising")
 
@@ -59,17 +62,25 @@ class VQVAE(pl.LightningModule):
         return x
 
     def _common_step(self, batch, batch_idx):
-        (x, mask), (x_v, mask_v) = batch
-        recon_x, quantization_loss = self(x)
-        recon_x_v, quantization_loss_v = self(x_v)
+        if self.mask:
 
-        mask = mask.repeat(1, 1, 2).reshape(x.shape)
-        mask_v = mask_v.repeat(1, 1, 2).reshape(x.shape)
-        # print(mask)
-        # print(mask_v)
+            (x, mask), (x_v, mask_v) = batch
+            recon_x, quantization_loss = self(x)
+            recon_x_v, quantization_loss_v = self(x_v)
 
-        recon_loss = self.reconstruction_loss(recon_x * mask, x * mask)
-        recon_loss_v = self.reconstruction_loss(recon_x_v * mask_v, x_v * mask_v)
+            mask = mask.repeat(1, 1, 2).reshape(x.shape)
+            mask_v = mask_v.repeat(1, 1, 2).reshape(x.shape)
+
+            recon_loss = self.reconstruction_loss(recon_x * mask, x * mask)
+            recon_loss_v = self.reconstruction_loss(recon_x_v * mask_v, x_v * mask_v)
+
+        else:
+            x, x_v = batch
+            recon_x, quantization_loss = self(x)
+            recon_x_v, quantization_loss_v = self(x_v)
+
+            recon_loss = self.reconstruction_loss(recon_x, x)
+            recon_loss_v = self.reconstruction_loss(recon_x_v, x_v)
 
         total_recon_loss = recon_loss + recon_loss_v
         total_quant_loss = quantization_loss + quantization_loss_v
